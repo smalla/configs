@@ -1,0 +1,731 @@
+
+loadrt 5axiskins
+loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AXES
+loadrt hostmot2
+loadrt hm2_pci config=" num_encoders=12 num_pwmgens=0 num_stepgens=0 sserial_port_0=000000" 
+setp    hm2_5i25.0.watchdog.timeout_ns 5000000
+loadrt at_pid names=pid.x,pid.y,pid.z,pid.a,pid.c,pid.s
+loadrt scale names=scale.gear
+#loadrt charge_pump
+loadrt classicladder_rt numPhysInputs=128 numPhysOutputs=32 numS32in=10 numS32out=10 numFloatIn=10 numFloatOut=10 numBits=50 numWords=50
+loadrt mux16 names=jogincr,feedogray,mvoincr,soincr,ratio_select
+
+#addf charge-pump servo-thread
+addf hm2_5i25.0.read          servo-thread
+addf motion-command-handler   servo-thread
+addf motion-controller        servo-thread
+addf pid.x.do-pid-calcs       servo-thread
+addf pid.y.do-pid-calcs       servo-thread
+addf pid.z.do-pid-calcs       servo-thread
+addf pid.a.do-pid-calcs       servo-thread
+addf pid.c.do-pid-calcs       servo-thread
+addf pid.s.do-pid-calcs       servo-thread
+addf classicladder.0.refresh servo-thread
+addf jogincr                  servo-thread
+addf feedogray                servo-thread
+addf mvoincr                  servo-thread
+addf soincr                   servo-thread
+addf ratio_select             servo-thread
+addf scale.gear               servo-thread
+addf hm2_5i25.0.write         servo-thread
+
+
+unlinkp iocontrol.0.user-enable-out
+unlinkp iocontrol.0.emc-enable-in
+
+net estop-out     <=  iocontrol.0.user-enable-out
+#net estop-ext     =>  iocontrol.0.emc-enable-in
+
+# ------------------------- External Output Signals ----------------------
+# --- X-Axis related pins ---
+net xprdy => hm2_5i25.0.7i77.0.0.output-15 <= classicladder.0.out-02
+# --- Y-Axis related pins ---
+net yprdy => hm2_5i25.0.7i77.0.0.output-14 <= classicladder.0.out-03
+# --- Z-Axis related pins ---
+net zprdy => hm2_5i25.0.7i77.0.0.output-13 <= classicladder.0.out-04
+# --- A-Axis related pins ---
+net aprdy => hm2_5i25.0.7i77.0.0.output-12 <= classicladder.0.out-05
+# --- C-Axis related pins ---
+net cprdy => hm2_5i25.0.7i77.0.0.output-11 <= classicladder.0.out-06
+
+#Auxilari powers soft start
+net aux-r1 => hm2_5i25.0.7i77.0.0.output-10 <= classicladder.0.out-10
+net aux-r2 => hm2_5i25.0.7i77.0.0.output-09 <= classicladder.0.out-11
+
+# --- COOLANT-AIR ---
+#net coolant-air hm2_5i25.0.7i77.0.0.output-10
+
+# --- COOLANT-MIST ---
+#net coolant-mist hm2_5i25.0.7i77.0.0.output-11
+
+# --- COOLANT-FLOOD ---
+#net coolant-flood hm2_5i25.0.7i77.0.0.output-12
+
+# ------------------------- External Input Signals ------------------------
+# --- ESTOP-EXT ---
+net estop-ext	<= hm2_5i25.0.7i77.0.3.input-09 => classicladder.0.in-00 #GUI-E key-1
+net estop-ext2	<= hm2_5i25.0.7i77.0.3.input-10-not => classicladder.0.in-01   #EXT-E
+net ext-reset	<= hm2_5i25.0.7i77.0.3.input-07 => classicladder.0.in-60 => halui.abort
+net AUX-ON	<= hm2_5i25.0.7i77.0.3.input-06 => classicladder.0.in-61
+net AUX-OFF	<= hm2_5i25.0.7i77.0.3.input-05 => classicladder.0.in-62
+net All-eStop-OK	classicladder.0.out-00 => iocontrol.0.emc-enable-in
+
+#net ex-aux-on halui.machine.on
+#net ext-estop classicladder.0.in-01
+net machineon 	halui.machine.on 	classicladder.0.out-09
+net machineof 	halui.machine.off 	classicladder.0.out-01
+net machine-is-on halui.machine.is-on	classicladder.0.in-64
+
+# -------- Switches -------
+# -----Feed Override ------
+net grey0 hm2_5i25.0.7i84.0.2.input-05 feedogray.sel0
+net grey1 hm2_5i25.0.7i84.0.2.input-04 feedogray.sel1
+net grey2 hm2_5i25.0.7i84.0.2.input-03 feedogray.sel2
+net grey3 hm2_5i25.0.7i84.0.2.input-02 feedogray.sel3
+setp halui.feed-override.direct-value true
+setp feedogray.use-graycode true
+setp feedogray.suppress-no-input true
+setp halui.feed-override.scale .01
+setp halui.feed-override.direct-value true
+net feedoverride feedogray.out-s halui.feed-override.counts
+setp feedogray.in01	0.000
+setp feedogray.in02	1.000
+setp feedogray.in03	2.000
+setp feedogray.in04	5.000
+setp feedogray.in05	10.000
+setp feedogray.in06	20.000
+setp feedogray.in07	30.000
+setp feedogray.in08	40.000
+setp feedogray.in09	50.000
+setp feedogray.in10	70.000
+setp feedogray.in11	90.000
+setp feedogray.in12	100.000
+setp feedogray.in13	110.000
+setp feedogray.in14	130.000
+setp feedogray.in15	0.000
+
+
+# --- X-Axis related pins ---
+net home-x  	<= hm2_5i25.0.7i77.0.0.input-01-not => classicladder.0.in-02
+net min-x     	<= hm2_5i25.0.7i77.0.0.input-03-not => classicladder.0.in-03
+net min-x-hard	<= hm2_5i25.0.7i77.0.0.input-00 => classicladder.0.in-04
+net max-x    	<= hm2_5i25.0.7i77.0.0.input-02-not => classicladder.0.in-05
+net max-x-hard	<= hm2_5i25.0.7i77.0.0.input-02 => classicladder.0.in-06
+net xvrdy 	<= hm2_5i25.0.7i77.0.0.input-31 => classicladder.0.in-07
+net xtrm 	<= hm2_5i25.0.7i77.0.0.input-30 => classicladder.0.in-08
+net xal1 	<= hm2_5i25.0.7i77.0.0.input-29 => classicladder.0.in-09
+net xal2 	<= hm2_5i25.0.7i77.0.0.input-28 => classicladder.0.in-10
+net xal4 	<= hm2_5i25.0.7i77.0.0.input-27 => classicladder.0.in-11
+
+# --- Y-Axis related pins ---
+net home-y	<= hm2_5i25.0.7i77.0.3.input-26 => classicladder.0.in-12
+net min-y      	<= hm2_5i25.0.7i77.0.3.input-28 => classicladder.0.in-13
+net min-y-hard  <= hm2_5i25.0.7i77.0.3.input-27 => classicladder.0.in-14
+net max-y   	<= hm2_5i25.0.7i77.0.3.input-30 => classicladder.0.in-15
+net max-y-hard 	<= hm2_5i25.0.7i77.0.3.input-29 => classicladder.0.in-16
+net yvrdy 	<= hm2_5i25.0.7i77.0.0.input-26 => classicladder.0.in-17
+net ytrm  	<= hm2_5i25.0.7i77.0.0.input-25 => classicladder.0.in-18
+net yal1  	<= hm2_5i25.0.7i77.0.0.input-24 => classicladder.0.in-19
+net yal2  	<= hm2_5i25.0.7i77.0.0.input-23 => classicladder.0.in-20
+net yal4  	<= hm2_5i25.0.7i77.0.0.input-22 => classicladder.0.in-21
+net ybrake  	<= hm2_5i25.0.7i77.0.0.input-21 => classicladder.0.in-22
+
+# --- Z-Axis related pins ---
+net home-z    	<= hm2_5i25.0.7i77.0.3.input-21 => classicladder.0.in-23
+net min-z    	<= hm2_5i25.0.7i77.0.3.input-23 => classicladder.0.in-24
+net min-z-hard 	<= hm2_5i25.0.7i77.0.3.input-22 => classicladder.0.in-25
+net max-z     	<= hm2_5i25.0.7i77.0.3.input-25 => classicladder.0.in-26
+net max-z-hard	<= hm2_5i25.0.7i77.0.3.input-24 => classicladder.0.in-27
+net zvrdy    	<= hm2_5i25.0.7i77.0.0.input-20 => classicladder.0.in-28
+net ztrm  	<= hm2_5i25.0.7i77.0.0.input-19 => classicladder.0.in-29
+net zal1  	<= hm2_5i25.0.7i77.0.0.input-18 => classicladder.0.in-30
+net zal2  	<= hm2_5i25.0.7i77.0.0.input-17 => classicladder.0.in-31
+net zal4  	<= hm2_5i25.0.7i77.0.0.input-16 => classicladder.0.in-32
+
+# --- A-Axis related pins ---
+net home-a  	<= hm2_5i25.0.7i77.0.3.input-16
+net min-a   	<= hm2_5i25.0.7i77.0.3.input-18
+net max-a   	<= hm2_5i25.0.7i77.0.3.input-20
+net avrdy 	<= hm2_5i25.0.7i77.0.0.input-15 => classicladder.0.in-33
+net atrm  	<= hm2_5i25.0.7i77.0.0.input-14 => classicladder.0.in-34
+net aal1  	<= hm2_5i25.0.7i77.0.0.input-13 => classicladder.0.in-35
+net aal2  	<= hm2_5i25.0.7i77.0.0.input-12 => classicladder.0.in-36
+net aal4  	<= hm2_5i25.0.7i77.0.0.input-11 => classicladder.0.in-37
+net abrake  	<= hm2_5i25.0.7i77.0.0.input-10 => classicladder.0.in-38
+
+# --- C-Axis related pins ---
+net home-c	<= hm2_5i25.0.7i77.0.3.input-11
+net cvrdy 	<= hm2_5i25.0.7i77.0.0.input-09 => classicladder.0.in-39
+net ctrm  	<= hm2_5i25.0.7i77.0.0.input-08 => classicladder.0.in-40
+net cal1  	<= hm2_5i25.0.7i77.0.0.input-07 => classicladder.0.in-41
+net cal2  	<= hm2_5i25.0.7i77.0.0.input-06 => classicladder.0.in-42
+net cal4  	<= hm2_5i25.0.7i77.0.0.input-05 => classicladder.0.in-43
+net cbrake  	<= hm2_5i25.0.7i77.0.0.input-04 => classicladder.0.in-44
+#net cpready	=> hm2_5i25.0.7i77.0.0.output-11 <= classicladder.0.out-10
+
+# --- ATC related pins ---
+net atc0 	<= hm2_5i25.0.7i84.0.2.input-31 => classicladder.0.in-45
+net atc1 	<= hm2_5i25.0.7i84.0.2.input-30 => classicladder.0.in-46
+net atc2 	<= hm2_5i25.0.7i84.0.2.input-29 => classicladder.0.in-47
+net atc3 	<= hm2_5i25.0.7i84.0.2.input-28 => classicladder.0.in-48
+
+# --- Spindle related pins ---
+net toolin 	<= hm2_5i25.0.7i84.0.2.input-27 => classicladder.0.in-49
+net toolout 	<= hm2_5i25.0.7i84.0.2.input-26 => classicladder.0.in-50
+net gear1 	<= hm2_5i25.0.7i84.0.2.input-25 => classicladder.0.in-51
+net gear2 	<= hm2_5i25.0.7i84.0.2.input-24 => classicladder.0.in-52
+net spos0 	<= hm2_5i25.0.7i84.0.2.input-23 => classicladder.0.in-53
+
+# --- Lube related pins ---
+
+net oilxpressure 	<= hm2_5i25.0.7i84.0.2.input-17 => classicladder.0.in-54
+net oilypressure 	<= hm2_5i25.0.7i84.0.2.input-18 => classicladder.0.in-55
+net oilzpressure 	<= hm2_5i25.0.7i84.0.2.input-16 => classicladder.0.in-56
+net oilapressure 	<= hm2_5i25.0.7i84.0.2.input-20 => classicladder.0.in-57
+net oilcpressure 	<= hm2_5i25.0.7i84.0.2.input-19 => classicladder.0.in-58
+net oil-level-low 	<= hm2_5i25.0.7i84.0.2.input-15 => classicladder.0.in-59
+net lube-motor  	=> hm2_5i25.0.7i77.0.0.output-00 <= classicladder.0.out-07
+net lube-low-alarm 	=> hm2_5i25.0.7i84.0.2.output-08 <= classicladder.0.out-08
+net lube-is-on	halui.lube.is-on	classicladder.0.in-63
+
+#*******************
+#  AXIS X
+#*******************
+
+setp   pid.x.Pgain     [AXIS_0]P
+setp   pid.x.Igain     [AXIS_0]I
+setp   pid.x.Dgain     [AXIS_0]D
+setp   pid.x.bias      [AXIS_0]BIAS
+setp   pid.x.FF0       [AXIS_0]FF0
+setp   pid.x.FF1       [AXIS_0]FF1
+setp   pid.x.FF2       [AXIS_0]FF2
+setp   pid.x.deadband  [AXIS_0]DEADBAND
+setp   pid.x.maxoutput [AXIS_0]MAX_OUTPUT
+#setp   pid.x.error-previous-target true
+
+#net x-index-enable  <=> pid.x.index-enable
+net x-enable        =>  pid.x.enable
+net x-pos-cmd       =>  pid.x.command
+#net x-vel-cmd       =>  pid.x.command-deriv
+net x-pos-fb        =>  pid.x.feedback
+net x-output        =>  pid.x.output
+
+# ---PWM Generator signals/setup---
+
+setp   hm2_5i25.0.7i77.0.1.analogout0-scalemax  [AXIS_0]OUTPUT_SCALE
+setp   hm2_5i25.0.7i77.0.1.analogout0-minlim    [AXIS_0]OUTPUT_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.1.analogout0-maxlim    [AXIS_0]OUTPUT_MAX_LIMIT
+
+setp   hm2_5i25.0.7i77.0.1.analogout1-scalemax  [AXIS_0]FEEDBACK_SCALE
+setp   hm2_5i25.0.7i77.0.1.analogout1-minlim    [AXIS_0]FEEDBACK_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.1.analogout1-maxlim    [AXIS_0]FEEDBACK_MAX_LIMIT
+
+net x-output                             => hm2_5i25.0.7i77.0.1.analogout0
+net x-pos-cmd    axis.0.motor-pos-cmd
+net x-enable     axis.0.amp-enable-out
+# enable _all_ sserial pwmgens
+net x-enable   hm2_5i25.0.7i77.0.1.analogena
+net x-enable   hm2_5i25.0.7i77.0.4.analogena
+
+# ---Encoder feedback signals/setup---
+
+setp    hm2_5i25.0.encoder.00.counter-mode 0
+setp    hm2_5i25.0.encoder.00.filter 1
+setp    hm2_5i25.0.encoder.00.index-invert 0
+setp    hm2_5i25.0.encoder.00.index-mask 0
+setp    hm2_5i25.0.encoder.00.index-mask-invert 0
+setp    hm2_5i25.0.encoder.00.scale  [AXIS_0]ENCODER_SCALE
+
+net x-pos-fb               <=  hm2_5i25.0.encoder.00.position
+net x-vel-fb               <=  hm2_5i25.0.encoder.00.velocity  => hm2_5i25.0.7i77.0.1.analogout1
+net x-pos-fb               =>  axis.0.motor-pos-fb
+net x-index-enable    axis.0.index-enable  <=>  hm2_5i25.0.encoder.00.index-enable
+net x-pos-rawcounts        <=  hm2_5i25.0.encoder.00.rawcounts
+
+# ---setup home / limit switch signals---
+
+net home-x     =>  axis.0.home-sw-in
+net min-x     =>  axis.0.neg-lim-sw-in
+net x-pos-limit     =>  axis.0.pos-lim-sw-in
+
+#*******************
+#  AXIS Y
+#*******************
+
+setp   pid.y.Pgain     [AXIS_1]P
+setp   pid.y.Igain     [AXIS_1]I
+setp   pid.y.Dgain     [AXIS_1]D
+setp   pid.y.bias      [AXIS_1]BIAS
+setp   pid.y.FF0       [AXIS_1]FF0
+setp   pid.y.FF1       [AXIS_1]FF1
+setp   pid.y.FF2       [AXIS_1]FF2
+setp   pid.y.deadband  [AXIS_1]DEADBAND
+setp   pid.y.maxoutput [AXIS_1]MAX_OUTPUT
+#setp   pid.y.error-previous-target true
+
+#net y-index-enable  <=> pid.y.index-enable
+net y-enable        =>  pid.y.enable
+net y-pos-cmd       =>  pid.y.command
+#net y-vel-cmd       =>  pid.y.command-deriv
+net y-pos-fb        =>  pid.y.feedback
+net y-output        =>  pid.y.output
+
+# ---PWM Generator signals/setup---
+
+setp   hm2_5i25.0.7i77.0.1.analogout2-scalemax  [AXIS_1]OUTPUT_SCALE
+setp   hm2_5i25.0.7i77.0.1.analogout2-minlim    [AXIS_1]OUTPUT_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.1.analogout2-maxlim    [AXIS_1]OUTPUT_MAX_LIMIT
+
+setp   hm2_5i25.0.7i77.0.1.analogout3-scalemax  [AXIS_1]FEEDBACK_SCALE
+setp   hm2_5i25.0.7i77.0.1.analogout3-minlim    [AXIS_1]FEEDBACK_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.1.analogout3-maxlim    [AXIS_1]FEEDBACK_MAX_LIMIT
+
+net y-output                             => hm2_5i25.0.7i77.0.1.analogout2
+net y-pos-cmd    axis.1.motor-pos-cmd
+net y-enable     axis.1.amp-enable-out
+
+# ---Encoder feedback signals/setup---
+
+setp    hm2_5i25.0.encoder.01.counter-mode 0
+setp    hm2_5i25.0.encoder.01.filter 1
+setp    hm2_5i25.0.encoder.01.index-invert 0
+setp    hm2_5i25.0.encoder.01.index-mask 0
+setp    hm2_5i25.0.encoder.01.index-mask-invert 0
+setp    hm2_5i25.0.encoder.01.scale  [AXIS_1]ENCODER_SCALE
+
+net y-pos-fb               <=  hm2_5i25.0.encoder.01.position
+net y-vel-fb               <=  hm2_5i25.0.encoder.01.velocity  => hm2_5i25.0.7i77.0.1.analogout3
+net y-pos-fb               =>  axis.1.motor-pos-fb
+net y-index-enable    axis.1.index-enable  <=>  hm2_5i25.0.encoder.01.index-enable
+net y-pos-rawcounts        <=  hm2_5i25.0.encoder.01.rawcounts
+
+# ---setup home / limit switch signals---
+
+net home-y     =>  axis.1.home-sw-in
+net min-y     =>  axis.1.neg-lim-sw-in
+net max-y     =>  axis.1.pos-lim-sw-in
+
+#*******************
+#  AXIS Z
+#*******************
+
+setp   pid.z.Pgain     [AXIS_2]P
+setp   pid.z.Igain     [AXIS_2]I
+setp   pid.z.Dgain     [AXIS_2]D
+setp   pid.z.bias      [AXIS_2]BIAS
+setp   pid.z.FF0       [AXIS_2]FF0
+setp   pid.z.FF1       [AXIS_2]FF1
+setp   pid.z.FF2       [AXIS_2]FF2
+setp   pid.z.deadband  [AXIS_2]DEADBAND
+setp   pid.z.maxoutput [AXIS_2]MAX_OUTPUT
+#setp   pid.z.error-previous-target true
+
+#net z-index-enable  <=> pid.z.index-enable
+net z-enable        =>  pid.z.enable
+net z-pos-cmd       =>  pid.z.command
+#net z-vel-cmd       =>  pid.z.command-deriv
+net z-pos-fb        =>  pid.z.feedback
+net z-output        =>  pid.z.output
+
+# ---PWM Generator signals/setup---
+
+setp   hm2_5i25.0.7i77.0.1.analogout4-scalemax  [AXIS_2]OUTPUT_SCALE
+setp   hm2_5i25.0.7i77.0.1.analogout4-minlim    [AXIS_2]OUTPUT_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.1.analogout4-maxlim    [AXIS_2]OUTPUT_MAX_LIMIT
+
+setp   hm2_5i25.0.7i77.0.4.analogout0-scalemax  [AXIS_2]FEEDBACK_SCALE
+setp   hm2_5i25.0.7i77.0.4.analogout0-minlim    [AXIS_2]FEEDBACK_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.4.analogout0-maxlim    [AXIS_2]FEEDBACK_MAX_LIMIT
+
+net z-output                             => hm2_5i25.0.7i77.0.1.analogout4
+net z-pos-cmd    axis.2.motor-pos-cmd
+net z-enable     axis.2.amp-enable-out
+net z-enable   hm2_5i25.0.7i77.0.1.spinena
+
+# ---Encoder feedback signals/setup---
+
+setp    hm2_5i25.0.encoder.02.counter-mode 0
+setp    hm2_5i25.0.encoder.02.filter 1
+setp    hm2_5i25.0.encoder.02.index-invert 0
+setp    hm2_5i25.0.encoder.02.index-mask 0
+setp    hm2_5i25.0.encoder.02.index-mask-invert 0
+setp    hm2_5i25.0.encoder.02.scale  [AXIS_2]ENCODER_SCALE
+
+net z-pos-fb               <=  hm2_5i25.0.encoder.02.position
+net z-vel-fb               <=  hm2_5i25.0.encoder.02.velocity => hm2_5i25.0.7i77.0.4.analogout0
+net z-pos-fb               =>  axis.2.motor-pos-fb
+net z-index-enable    axis.2.index-enable  <=>  hm2_5i25.0.encoder.02.index-enable
+net z-pos-rawcounts        <=  hm2_5i25.0.encoder.02.rawcounts
+
+# ---setup home / limit switch signals---
+
+net home-z     =>  axis.2.home-sw-in
+net min-z     =>  axis.2.neg-lim-sw-in
+net max-z     =>  axis.2.pos-lim-sw-in
+
+#*******************
+#  AXIS A
+#*******************
+
+setp   pid.a.Pgain     [AXIS_3]P
+setp   pid.a.Igain     [AXIS_3]I
+setp   pid.a.Dgain     [AXIS_3]D
+setp   pid.a.bias      [AXIS_3]BIAS
+setp   pid.a.FF0       [AXIS_3]FF0
+setp   pid.a.FF1       [AXIS_3]FF1
+setp   pid.a.FF2       [AXIS_3]FF2
+setp   pid.a.deadband  [AXIS_3]DEADBAND
+setp   pid.a.maxoutput [AXIS_3]MAX_OUTPUT
+#setp   pid.a.error-previous-target true
+
+#net a-index-enable  <=> pid.a.index-enable
+net a-enable        =>  pid.a.enable
+net a-pos-cmd       =>  pid.a.command
+#net a-vel-cmd       =>  pid.a.command-deriv
+net a-pos-fb        =>  pid.a.feedback
+net a-output        =>  pid.a.output
+
+# ---PWM Generator signals/setup---
+
+setp   hm2_5i25.0.7i77.0.4.analogout1-scalemax  [AXIS_3]OUTPUT_SCALE
+setp   hm2_5i25.0.7i77.0.4.analogout1-minlim    [AXIS_3]OUTPUT_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.4.analogout1-maxlim    [AXIS_3]OUTPUT_MAX_LIMIT
+
+setp   hm2_5i25.0.7i77.0.4.analogout2-scalemax  [AXIS_3]FEEDBACK_SCALE
+setp   hm2_5i25.0.7i77.0.4.analogout2-minlim    [AXIS_3]FEEDBACK_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.4.analogout2-maxlim    [AXIS_3]FEEDBACK_MAX_LIMIT
+
+net a-output                             => hm2_5i25.0.7i77.0.4.analogout1
+net a-pos-cmd    axis.3.motor-pos-cmd
+net a-enable     axis.3.amp-enable-out
+
+# ---Encoder feedback signals/setup---
+
+setp    hm2_5i25.0.encoder.06.counter-mode 0
+setp    hm2_5i25.0.encoder.06.filter 1
+setp    hm2_5i25.0.encoder.06.index-invert 0
+setp    hm2_5i25.0.encoder.06.index-mask 0
+setp    hm2_5i25.0.encoder.06.index-mask-invert 0
+setp    hm2_5i25.0.encoder.06.scale  [AXIS_3]ENCODER_SCALE
+
+net a-pos-fb               <=  hm2_5i25.0.encoder.06.position
+net a-vel-fb               <=  hm2_5i25.0.encoder.06.velocity => hm2_5i25.0.7i77.0.4.analogout2
+net a-pos-fb               =>  axis.3.motor-pos-fb
+net a-index-enable    axis.3.index-enable  <=>  hm2_5i25.0.encoder.06.index-enable
+net a-pos-rawcounts        <=  hm2_5i25.0.encoder.06.rawcounts
+
+# ---setup home / limit switch signals---
+
+net home-a     =>  axis.3.home-sw-in
+net min-a     =>  axis.3.neg-lim-sw-in
+net max-a     =>  axis.3.pos-lim-sw-in
+
+#*******************
+#  AXIS C
+#*******************
+
+setp   pid.c.Pgain     [AXIS_4]P
+setp   pid.c.Igain     [AXIS_4]I
+setp   pid.c.Dgain     [AXIS_4]D
+setp   pid.c.bias      [AXIS_4]BIAS
+setp   pid.c.FF0       [AXIS_4]FF0
+setp   pid.c.FF1       [AXIS_4]FF1
+setp   pid.c.FF2       [AXIS_4]FF2
+setp   pid.c.deadband  [AXIS_4]DEADBAND
+setp   pid.c.maxoutput [AXIS_4]MAX_OUTPUT
+#setp   pid.c.error-previous-target true
+
+#net c-index-enable  <=> pid.c.index-enable
+net c-enable        =>  pid.c.enable
+net c-pos-cmd       =>  pid.c.command
+#net c-vel-cmd       =>  pid.c.command-deriv
+net c-pos-fb        =>  pid.c.feedback
+net c-output        =>  pid.c.output
+
+# ---PWM Generator signals/setup---
+
+setp   hm2_5i25.0.7i77.0.4.analogout3-scalemax  [AXIS_4]OUTPUT_SCALE
+setp   hm2_5i25.0.7i77.0.4.analogout3-minlim    [AXIS_4]OUTPUT_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.4.analogout3-maxlim    [AXIS_4]OUTPUT_MAX_LIMIT
+
+setp   hm2_5i25.0.7i77.0.4.analogout4-scalemax  [AXIS_4]FEEDBACK_SCALE
+setp   hm2_5i25.0.7i77.0.4.analogout4-minlim    [AXIS_4]FEEDBACK_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.4.analogout4-maxlim    [AXIS_4]FEEDBACK_MAX_LIMIT
+
+net c-output                             => hm2_5i25.0.7i77.0.4.analogout3
+net c-pos-cmd    axis.4.motor-pos-cmd
+net c-enable     axis.4.amp-enable-out
+
+# ---Encoder feedback signals/setup---
+
+setp    hm2_5i25.0.encoder.07.counter-mode 0
+setp    hm2_5i25.0.encoder.07.filter 1
+setp    hm2_5i25.0.encoder.07.index-invert 0
+setp    hm2_5i25.0.encoder.07.index-mask 0
+setp    hm2_5i25.0.encoder.07.index-mask-invert 0
+setp    hm2_5i25.0.encoder.07.scale  [AXIS_4]ENCODER_SCALE
+
+net c-pos-fb               <=  hm2_5i25.0.encoder.07.position
+net c-vel-fb               <=  hm2_5i25.0.encoder.07.velocity => hm2_5i25.0.7i77.0.4.analogout4
+net c-pos-fb               =>  axis.4.motor-pos-fb
+net c-index-enable    axis.4.index-enable  <=>  hm2_5i25.0.encoder.07.index-enable
+net c-pos-rawcounts        <=  hm2_5i25.0.encoder.07.rawcounts
+
+# ---setup home / limit switch signals---
+
+net home-c     =>  axis.4.home-sw-in
+net min-c     =>  axis.4.neg-lim-sw-in
+net max-c     =>  axis.4.pos-lim-sw-in
+
+#*******************
+#  SPINDLE S
+#*******************
+
+setp   pid.s.Pgain     [SPINDLE_9]P
+setp   pid.s.Igain     [SPINDLE_9]I
+setp   pid.s.Dgain     [SPINDLE_9]D
+setp   pid.s.bias      [SPINDLE_9]BIAS
+setp   pid.s.FF0       [SPINDLE_9]FF0
+setp   pid.s.FF1       [SPINDLE_9]FF1
+setp   pid.s.FF2       [SPINDLE_9]FF2
+setp   pid.s.deadband  [SPINDLE_9]DEADBAND
+net ratio_select.out   pid.s.maxoutput 
+#setp   pid.s.error-previous-target true
+
+#net spindle-index-enable  <=> pid.s.index-enable
+net spindle-enable        =>  pid.s.enable
+net spindle-vel-cmd-rpm     => pid.s.command
+net spindle-vel-fb-rpm      => pid.s.feedback
+net spindle-pid-out  pid.s.output    => scale.gear.in
+net gear-ratio       ratio_select.out-f => scale.gear.gain
+setp ratio_select.in00 0.000924
+setp ratio_select.in01 0.000530
+net gear-select-a         =>  ratio_select.sel0
+net spindle-output        <=  scale.gear.out
+
+# ---PWM Generator signals/setup---
+
+setp   hm2_5i25.0.7i77.0.4.analogout5-scalemax  [SPINDLE_9]OUTPUT_SCALE
+setp   hm2_5i25.0.7i77.0.4.analogout5-minlim    [SPINDLE_9]OUTPUT_MIN_LIMIT
+setp   hm2_5i25.0.7i77.0.4.analogout5-maxlim    [SPINDLE_9]OUTPUT_MAX_LIMIT
+
+net spindle-output      => hm2_5i25.0.7i77.0.4.analogout5
+net spindle-enable      => hm2_5i25.0.7i77.0.4.spinena
+
+# ---Encoder feedback signals/setup---
+
+setp    hm2_5i25.0.encoder.05.counter-mode 0
+setp    hm2_5i25.0.encoder.05.filter 1
+setp    hm2_5i25.0.encoder.05.index-invert 0
+setp    hm2_5i25.0.encoder.05.index-mask 0
+setp    hm2_5i25.0.encoder.05.index-mask-invert 0
+setp    hm2_5i25.0.encoder.05.scale  [SPINDLE_9]ENCODER_SCALE
+
+net spindle-revs             <=   hm2_5i25.0.encoder.05.position
+net spindle-vel-fb-rps       <=   hm2_5i25.0.encoder.05.velocity
+net spindle-index-enable     <=>  hm2_5i25.0.encoder.05.index-enable
+
+# ---setup spindle control signals---
+
+net spindle-vel-cmd-rps        <=  motion.spindle-speed-out-rps
+net spindle-vel-cmd-rps-abs    <=  motion.spindle-speed-out-rps-abs
+net spindle-vel-cmd-rpm        <=  motion.spindle-speed-out
+net spindle-vel-cmd-rpm-abs    <=  motion.spindle-speed-out-abs
+net spindle-enable             <=  motion.spindle-on
+net spindle-cw                 <=  motion.spindle-forward
+net spindle-ccw                <=  motion.spindle-reverse
+net spindle-brake              <=  motion.spindle-brake
+net spindle-revs               =>  motion.spindle-revs
+net spindle-at-speed           =>  motion.spindle-at-speed
+net spindle-vel-fb-rps         =>  motion.spindle-speed-in
+net spindle-index-enable      <=>  motion.spindle-index-enable
+
+# ---Setup spindle at speed signals---
+
+sets spindle-at-speed true
+
+
+#******************************
+# connect miscellaneous signals
+#******************************
+
+#  ---HALUI signals---
+
+net joint-select-a        halui.joint.0.select
+net x-is-homed            halui.joint.0.is-homed
+net jog-x-pos             halui.jog.0.plus
+net jog-x-neg             halui.jog.0.minus
+net jog-x-analog          halui.jog.0.analog
+net joint-select-b        halui.joint.1.select
+net y-is-homed            halui.joint.1.is-homed
+net jog-y-pos             halui.jog.1.plus
+net jog-y-neg             halui.jog.1.minus
+net jog-y-analog          halui.jog.1.analog
+net joint-select-c        halui.joint.2.select
+net z-is-homed            halui.joint.2.is-homed
+net jog-z-pos             halui.jog.2.plus
+net jog-z-neg             halui.jog.2.minus
+net jog-z-analog          halui.jog.2.analog
+net joint-select-d        halui.joint.3.select
+net a-is-homed            halui.joint.3.is-homed
+net jog-a-pos             halui.jog.3.plus
+net jog-a-neg             halui.jog.3.minus
+net jog-a-analog          halui.jog.3.analog
+net jog-selected-pos      halui.jog.selected.plus
+net jog-selected-neg      halui.jog.selected.minus
+net spindle-manual-cw     halui.spindle.forward
+net spindle-manual-ccw    halui.spindle.reverse
+net spindle-manual-stop   halui.spindle.stop
+net machine-is-on         halui.machine.is-on
+net jog-speed             halui.jog-speed 
+net MDI-mode              halui.mode.is-mdi
+
+#  ---charge pump signals---
+#net estop-out       =>  charge-pump.enable
+#net charge-pump     <=  charge-pump.out
+
+#  ---coolant signals---
+
+#net coolant-air      <=  iocontrol.0.coolant-air
+net coolant-mist      <=  iocontrol.0.coolant-mist
+net coolant-flood     <=  iocontrol.0.coolant-flood
+
+#  ---probe signal---
+
+net probe-in     =>  motion.probe-input
+
+# ---jogwheel signals to mesa encoder - shared MPG---
+
+net joint-selected-count     <=  hm2_5i25.0.encoder.04.count
+
+#  ---mpg signals---
+
+#       for axis x MPG
+setp    axis.0.jog-vel-mode 0
+net selected-jog-incr    =>  axis.0.jog-scale
+net joint-select-a       =>  axis.0.jog-enable
+net joint-selected-count =>  axis.0.jog-counts
+
+#       for axis y MPG
+setp    axis.1.jog-vel-mode 0
+net selected-jog-incr    =>  axis.1.jog-scale
+net joint-select-b       =>  axis.1.jog-enable
+net joint-selected-count =>  axis.1.jog-counts
+
+#       for axis z MPG
+setp    axis.2.jog-vel-mode 0
+net selected-jog-incr    =>  axis.2.jog-scale
+net joint-select-c       =>  axis.2.jog-enable
+net joint-selected-count =>  axis.2.jog-counts
+
+#       for axis a MPG
+setp    axis.3.jog-vel-mode 0
+net selected-jog-incr    =>  axis.3.jog-scale
+net joint-select-d       =>  axis.3.jog-enable
+net joint-selected-count =>  axis.3.jog-counts
+
+# connect selectable mpg jog increments 
+
+net jog-incr-a           =>  jogincr.sel0
+net jog-incr-b           =>  jogincr.sel1
+net jog-incr-c           =>  jogincr.sel2
+net jog-incr-d           =>  jogincr.sel3
+net selected-jog-incr    <=  jogincr.out-f
+    setp jogincr.debounce-time      0.200000
+    setp jogincr.use-graycode      False
+    setp jogincr.suppress-no-input False
+    setp jogincr.in00          0.000000
+    setp jogincr.in01          0.000100
+    setp jogincr.in02          0.000500
+    setp jogincr.in03          0.001000
+    setp jogincr.in04          0.005000
+    setp jogincr.in05          0.010000
+    setp jogincr.in06          0.050000
+    setp jogincr.in07          0.100000
+    setp jogincr.in08          0.125000
+    setp jogincr.in09          0.125000
+    setp jogincr.in10          0.125000
+    setp jogincr.in11          0.125000
+    setp jogincr.in12          0.125000
+    setp jogincr.in13          0.125000
+    setp jogincr.in14          0.125000
+    setp jogincr.in15          0.125000
+
+# ---feed override signals to mesa encoder - mpg---
+
+#net fo-count     <=  hm2_5i25.0.encoder.08.count
+
+# connect feed overide increments - MPG
+
+#    setp halui.feed-override.direct-value false
+#    setp halui.feed-override.scale .01
+#    setp halui.feed-override.count-enable true
+#net fo-count            =>  halui.feed-override.counts
+
+# ---max velocity override signals to mesa encoder - mpg---
+
+net mvo-count     <=  hm2_5i25.0.encoder.10.count
+
+# connect max velocity overide increments - MPG
+
+    setp halui.max-velocity.direct-value false
+    setp halui.max-velocity.scale 20.000000
+    setp halui.max-velocity.count-enable true
+net mvo-count            =>  halui.max-velocity.counts
+
+# ---spindle override signals to mesa encoder - mpg---
+
+net so-count     <=  hm2_5i25.0.encoder.09.count
+
+# connect spindle overide increments 
+
+    setp halui.spindle-override.count-enable true
+    setp halui.spindle-override.direct-value true
+    setp halui.spindle-override.scale .01
+net spindleoverride-incr  =>  halui.spindle-override.counts
+net so-incr-a             =>  soincr.sel0
+net so-incr-b             =>  soincr.sel1
+net so-incr-c             =>  soincr.sel2
+net so-incr-d             =>  soincr.sel3
+net spindleoverride-incr  <=  soincr.out-s
+    setp soincr.debounce-time      0.200000
+    setp soincr.use-graycode      False
+    setp soincr.suppress-no-input False
+    setp soincr.in00          0.000000
+    setp soincr.in01          5.000000
+    setp soincr.in02          10.000000
+    setp soincr.in03          25.000000
+    setp soincr.in04          50.000000
+    setp soincr.in05          75.000000
+    setp soincr.in06          90.000000
+    setp soincr.in07          100.000000
+    setp soincr.in08          110.000000
+    setp soincr.in09          125.000000
+    setp soincr.in10          140.000000
+    setp soincr.in11          150.000000
+    setp soincr.in12          165.000000
+    setp soincr.in13          180.000000
+    setp soincr.in14          190.000000
+    setp soincr.in15          200.000000
+
+#  ---motion control signals---
+
+net in-position               <=  motion.in-position
+net machine-is-enabled        <=  motion.motion-enabled
+
+#  ---digital in / out signals---
+
+
+#  ---toolchange signals for custom tool changer---
+
+net tool-number             <=  iocontrol.0.tool-prep-number
+net tool-change-request     <=  iocontrol.0.tool-change
+net tool-change-confirmed   =>  iocontrol.0.tool-changed
+net tool-prepare-request    <=  iocontrol.0.tool-prepare
+net tool-prepare-confirmed  =>  iocontrol.0.tool-prepared
+
+
+# Load Classicladder without GUI (can reload LADDER GUI in AXIS GUI
+
+loadusr classicladder --nogui XYZAC320.clp
+
