@@ -37,20 +37,22 @@ net estop-out     <=  iocontrol.0.user-enable-out
 #net estop-ext     =>  iocontrol.0.emc-enable-in
 
 # ------------------------- External Output Signals ----------------------
-# --- X-Axis related pins ---
 net xprdy => hm2_5i25.0.7i77.0.0.output-15 <= classicladder.0.out-02
-# --- Y-Axis related pins ---
 net yprdy => hm2_5i25.0.7i77.0.0.output-14 <= classicladder.0.out-03
-# --- Z-Axis related pins ---
 net zprdy => hm2_5i25.0.7i77.0.0.output-13 <= classicladder.0.out-04
-# --- A-Axis related pins ---
 net aprdy => hm2_5i25.0.7i77.0.0.output-12 <= classicladder.0.out-05
-# --- C-Axis related pins ---
 net cprdy => hm2_5i25.0.7i77.0.0.output-11 <= classicladder.0.out-06
 
-#Auxilari powers soft start
+#Auxilary powers soft start
 net aux-r1 => hm2_5i25.0.7i77.0.0.output-10 <= classicladder.0.out-10
 net aux-r2 => hm2_5i25.0.7i77.0.0.output-09 <= classicladder.0.out-11
+
+net x-emg => hm2_5i25.0.7i77.0.0.output-08 <= classicladder.0.out-12
+net y-emg => hm2_5i25.0.7i77.0.0.output-07 <= classicladder.0.out-13
+net y-brk => hm2_5i25.0.7i77.0.0.output-06 <= classicladder.0.out-14
+net z-emg => hm2_5i25.0.7i77.0.0.output-05 <= classicladder.0.out-15
+net a-emg => hm2_5i25.0.7i77.0.0.output-04 <= classicladder.0.out-16
+net c-emg => hm2_5i25.0.7i77.0.0.output-03 <= classicladder.0.out-17
 
 # --- COOLANT-AIR ---
 #net coolant-air hm2_5i25.0.7i77.0.0.output-10
