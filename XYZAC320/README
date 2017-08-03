@@ -1,0 +1,3 @@
+This is a 5 Axis machine (HMC) with a 320mm working area, and with a 32 (fixed) position  tool changer.
+Hardware is based on Mesa 6i25 + 2x7i77 + 2x7i84 analog servo drive interfaces.
+The servo motors and aplifiers are Fanuc DC servo series system 6m based. The main spindle is 12KW AC servo.
