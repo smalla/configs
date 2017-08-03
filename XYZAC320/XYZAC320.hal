@@ -6,11 +6,9 @@ loadrt hm2_pci config=" num_encoders=12 num_pwmgens=0 num_stepgens=0 sserial_por
 setp    hm2_5i25.0.watchdog.timeout_ns 5000000
 loadrt at_pid names=pid.x,pid.y,pid.z,pid.a,pid.c,pid.s
 loadrt scale names=scale.gear
-#loadrt charge_pump
 loadrt classicladder_rt numPhysInputs=128 numPhysOutputs=32 numS32in=10 numS32out=10 numFloatIn=10 numFloatOut=10 numBits=50 numWords=50
 loadrt mux16 names=jogincr,feedogray,mvoincr,soincr,ratio_select
 
-#addf charge-pump servo-thread
 addf hm2_5i25.0.read          servo-thread
 addf motion-command-handler   servo-thread
 addf motion-controller        servo-thread
@@ -29,7 +27,6 @@ addf ratio_select             servo-thread
 addf scale.gear               servo-thread
 addf hm2_5i25.0.write         servo-thread
 
-
 unlinkp iocontrol.0.user-enable-out
 unlinkp iocontrol.0.emc-enable-in
 
@@ -37,19 +34,21 @@ net estop-out     <=  iocontrol.0.user-enable-out
 #net estop-ext     =>  iocontrol.0.emc-enable-in
 
 # ------------------------- External Output Signals ----------------------
+# Auxilary mains power supply is ready for servo amplifiers
 net xprdy => hm2_5i25.0.7i77.0.0.output-15 <= classicladder.0.out-02
 net yprdy => hm2_5i25.0.7i77.0.0.output-14 <= classicladder.0.out-03
 net zprdy => hm2_5i25.0.7i77.0.0.output-13 <= classicladder.0.out-04
 net aprdy => hm2_5i25.0.7i77.0.0.output-12 <= classicladder.0.out-05
 net cprdy => hm2_5i25.0.7i77.0.0.output-11 <= classicladder.0.out-06
 
-#Auxilary powers soft start
+# Auxilary powers soft start (r1 drives the transformer through heating elements to limit inrush current)
 net aux-r1 => hm2_5i25.0.7i77.0.0.output-10 <= classicladder.0.out-10
 net aux-r2 => hm2_5i25.0.7i77.0.0.output-09 <= classicladder.0.out-11
 
+# servo aplifiers "emergency" relays, if not enabled servo is braking to still.
 net x-emg => hm2_5i25.0.7i77.0.0.output-08 <= classicladder.0.out-12
 net y-emg => hm2_5i25.0.7i77.0.0.output-07 <= classicladder.0.out-13
-net y-brk => hm2_5i25.0.7i77.0.0.output-06 <= classicladder.0.out-14
+net y-brk => hm2_5i25.0.7i77.0.0.output-06 <= classicladder.0.out-14 # vertical axis holding brake
 net z-emg => hm2_5i25.0.7i77.0.0.output-05 <= classicladder.0.out-15
 net a-emg => hm2_5i25.0.7i77.0.0.output-04 <= classicladder.0.out-16
 net c-emg => hm2_5i25.0.7i77.0.0.output-03 <= classicladder.0.out-17
@@ -70,10 +69,9 @@ net estop-ext2	<= hm2_5i25.0.7i77.0.3.input-10-not => classicladder.0.in-01   #E
 net ext-reset	<= hm2_5i25.0.7i77.0.3.input-07 => classicladder.0.in-60 => halui.abort
 net AUX-ON	<= hm2_5i25.0.7i77.0.3.input-06 => classicladder.0.in-61
 net AUX-OFF	<= hm2_5i25.0.7i77.0.3.input-05 => classicladder.0.in-62
-net All-eStop-OK	classicladder.0.out-00 => iocontrol.0.emc-enable-in
+net All-eStop-OK <=	classicladder.0.out-00 => iocontrol.0.emc-enable-in
 
 #net ex-aux-on halui.machine.on
-#net ext-estop classicladder.0.in-01
 net machineon 	halui.machine.on 	classicladder.0.out-09
 net machineof 	halui.machine.off 	classicladder.0.out-01
 net machine-is-on halui.machine.is-on	classicladder.0.in-64
@@ -106,30 +104,29 @@ setp feedogray.in13	110.000
 setp feedogray.in14	130.000
 setp feedogray.in15	0.000
 
-
 # --- X-Axis related pins ---
 net home-x  	<= hm2_5i25.0.7i77.0.0.input-01-not => classicladder.0.in-02
 net min-x     	<= hm2_5i25.0.7i77.0.0.input-03-not => classicladder.0.in-03
 net min-x-hard	<= hm2_5i25.0.7i77.0.0.input-00 => classicladder.0.in-04
 net max-x    	<= hm2_5i25.0.7i77.0.0.input-02-not => classicladder.0.in-05
 net max-x-hard	<= hm2_5i25.0.7i77.0.0.input-02 => classicladder.0.in-06
-net xvrdy 	<= hm2_5i25.0.7i77.0.0.input-31 => classicladder.0.in-07
-net xtrm 	<= hm2_5i25.0.7i77.0.0.input-30 => classicladder.0.in-08
-net xal1 	<= hm2_5i25.0.7i77.0.0.input-29 => classicladder.0.in-09
-net xal2 	<= hm2_5i25.0.7i77.0.0.input-28 => classicladder.0.in-10
-net xal4 	<= hm2_5i25.0.7i77.0.0.input-27 => classicladder.0.in-11
+net xvrdy   	<= hm2_5i25.0.7i77.0.0.input-31 => classicladder.0.in-07
+net xtrm 	    <= hm2_5i25.0.7i77.0.0.input-30 => classicladder.0.in-08
+net xal1    	<= hm2_5i25.0.7i77.0.0.input-29 => classicladder.0.in-09
+net xal2 	    <= hm2_5i25.0.7i77.0.0.input-28 => classicladder.0.in-10
+net xal4 	    <= hm2_5i25.0.7i77.0.0.input-27 => classicladder.0.in-11
 
 # --- Y-Axis related pins ---
-net home-y	<= hm2_5i25.0.7i77.0.3.input-26 => classicladder.0.in-12
+net home-y	    <= hm2_5i25.0.7i77.0.3.input-26 => classicladder.0.in-12
 net min-y      	<= hm2_5i25.0.7i77.0.3.input-28 => classicladder.0.in-13
 net min-y-hard  <= hm2_5i25.0.7i77.0.3.input-27 => classicladder.0.in-14
 net max-y   	<= hm2_5i25.0.7i77.0.3.input-30 => classicladder.0.in-15
 net max-y-hard 	<= hm2_5i25.0.7i77.0.3.input-29 => classicladder.0.in-16
-net yvrdy 	<= hm2_5i25.0.7i77.0.0.input-26 => classicladder.0.in-17
-net ytrm  	<= hm2_5i25.0.7i77.0.0.input-25 => classicladder.0.in-18
-net yal1  	<= hm2_5i25.0.7i77.0.0.input-24 => classicladder.0.in-19
-net yal2  	<= hm2_5i25.0.7i77.0.0.input-23 => classicladder.0.in-20
-net yal4  	<= hm2_5i25.0.7i77.0.0.input-22 => classicladder.0.in-21
+net yvrdy 	    <= hm2_5i25.0.7i77.0.0.input-26 => classicladder.0.in-17
+net ytrm  	    <= hm2_5i25.0.7i77.0.0.input-25 => classicladder.0.in-18
+net yal1  	    <= hm2_5i25.0.7i77.0.0.input-24 => classicladder.0.in-19
+net yal2  	    <= hm2_5i25.0.7i77.0.0.input-23 => classicladder.0.in-20
+net yal4  	    <= hm2_5i25.0.7i77.0.0.input-22 => classicladder.0.in-21
 net ybrake  	<= hm2_5i25.0.7i77.0.0.input-21 => classicladder.0.in-22
 
 # --- Z-Axis related pins ---
@@ -139,31 +136,30 @@ net min-z-hard 	<= hm2_5i25.0.7i77.0.3.input-22 => classicladder.0.in-25
 net max-z     	<= hm2_5i25.0.7i77.0.3.input-25 => classicladder.0.in-26
 net max-z-hard	<= hm2_5i25.0.7i77.0.3.input-24 => classicladder.0.in-27
 net zvrdy    	<= hm2_5i25.0.7i77.0.0.input-20 => classicladder.0.in-28
-net ztrm  	<= hm2_5i25.0.7i77.0.0.input-19 => classicladder.0.in-29
-net zal1  	<= hm2_5i25.0.7i77.0.0.input-18 => classicladder.0.in-30
-net zal2  	<= hm2_5i25.0.7i77.0.0.input-17 => classicladder.0.in-31
-net zal4  	<= hm2_5i25.0.7i77.0.0.input-16 => classicladder.0.in-32
+net ztrm  	    <= hm2_5i25.0.7i77.0.0.input-19 => classicladder.0.in-29
+net zal1  	    <= hm2_5i25.0.7i77.0.0.input-18 => classicladder.0.in-30
+net zal2  	    <= hm2_5i25.0.7i77.0.0.input-17 => classicladder.0.in-31
+net zal4  	    <= hm2_5i25.0.7i77.0.0.input-16 => classicladder.0.in-32
 
 # --- A-Axis related pins ---
 net home-a  	<= hm2_5i25.0.7i77.0.3.input-16
 net min-a   	<= hm2_5i25.0.7i77.0.3.input-18
 net max-a   	<= hm2_5i25.0.7i77.0.3.input-20
-net avrdy 	<= hm2_5i25.0.7i77.0.0.input-15 => classicladder.0.in-33
-net atrm  	<= hm2_5i25.0.7i77.0.0.input-14 => classicladder.0.in-34
-net aal1  	<= hm2_5i25.0.7i77.0.0.input-13 => classicladder.0.in-35
-net aal2  	<= hm2_5i25.0.7i77.0.0.input-12 => classicladder.0.in-36
-net aal4  	<= hm2_5i25.0.7i77.0.0.input-11 => classicladder.0.in-37
+net avrdy 	    <= hm2_5i25.0.7i77.0.0.input-15 => classicladder.0.in-33
+net atrm  	    <= hm2_5i25.0.7i77.0.0.input-14 => classicladder.0.in-34
+net aal1  	    <= hm2_5i25.0.7i77.0.0.input-13 => classicladder.0.in-35
+net aal2  	    <= hm2_5i25.0.7i77.0.0.input-12 => classicladder.0.in-36
+net aal4  	    <= hm2_5i25.0.7i77.0.0.input-11 => classicladder.0.in-37
 net abrake  	<= hm2_5i25.0.7i77.0.0.input-10 => classicladder.0.in-38
 
 # --- C-Axis related pins ---
-net home-c	<= hm2_5i25.0.7i77.0.3.input-11
-net cvrdy 	<= hm2_5i25.0.7i77.0.0.input-09 => classicladder.0.in-39
-net ctrm  	<= hm2_5i25.0.7i77.0.0.input-08 => classicladder.0.in-40
-net cal1  	<= hm2_5i25.0.7i77.0.0.input-07 => classicladder.0.in-41
-net cal2  	<= hm2_5i25.0.7i77.0.0.input-06 => classicladder.0.in-42
-net cal4  	<= hm2_5i25.0.7i77.0.0.input-05 => classicladder.0.in-43
+net home-c	    <= hm2_5i25.0.7i77.0.3.input-11
+net cvrdy 	    <= hm2_5i25.0.7i77.0.0.input-09 => classicladder.0.in-39
+net ctrm  	    <= hm2_5i25.0.7i77.0.0.input-08 => classicladder.0.in-40
+net cal1  	    <= hm2_5i25.0.7i77.0.0.input-07 => classicladder.0.in-41
+net cal2  	    <= hm2_5i25.0.7i77.0.0.input-06 => classicladder.0.in-42
+net cal4  	    <= hm2_5i25.0.7i77.0.0.input-05 => classicladder.0.in-43
 net cbrake  	<= hm2_5i25.0.7i77.0.0.input-04 => classicladder.0.in-44
-#net cpready	=> hm2_5i25.0.7i77.0.0.output-11 <= classicladder.0.out-10
 
 # --- ATC related pins ---
 net atc0 	<= hm2_5i25.0.7i84.0.2.input-31 => classicladder.0.in-45
@@ -172,11 +168,11 @@ net atc2 	<= hm2_5i25.0.7i84.0.2.input-29 => classicladder.0.in-47
 net atc3 	<= hm2_5i25.0.7i84.0.2.input-28 => classicladder.0.in-48
 
 # --- Spindle related pins ---
-net toolin 	<= hm2_5i25.0.7i84.0.2.input-27 => classicladder.0.in-49
+net toolin 	    <= hm2_5i25.0.7i84.0.2.input-27 => classicladder.0.in-49
 net toolout 	<= hm2_5i25.0.7i84.0.2.input-26 => classicladder.0.in-50
-net gear1 	<= hm2_5i25.0.7i84.0.2.input-25 => classicladder.0.in-51
-net gear2 	<= hm2_5i25.0.7i84.0.2.input-24 => classicladder.0.in-52
-net spos0 	<= hm2_5i25.0.7i84.0.2.input-23 => classicladder.0.in-53
+net gear1 	    <= hm2_5i25.0.7i84.0.2.input-25 => classicladder.0.in-51
+net gear2 	    <= hm2_5i25.0.7i84.0.2.input-24 => classicladder.0.in-52
+net spos0 	    <= hm2_5i25.0.7i84.0.2.input-23 => classicladder.0.in-53
 
 # --- Lube related pins ---
 
@@ -188,7 +184,7 @@ net oilcpressure 	<= hm2_5i25.0.7i84.0.2.input-19 => classicladder.0.in-58
 net oil-level-low 	<= hm2_5i25.0.7i84.0.2.input-15 => classicladder.0.in-59
 net lube-motor  	=> hm2_5i25.0.7i77.0.0.output-00 <= classicladder.0.out-07
 net lube-low-alarm 	=> hm2_5i25.0.7i84.0.2.output-08 <= classicladder.0.out-08
-net lube-is-on	halui.lube.is-on	classicladder.0.in-63
+net lube-is-on	    <= halui.lube.is-on             => classicladder.0.in-63
 
 #*******************
 #  AXIS X
@@ -203,7 +199,6 @@ setp   pid.x.FF1       [AXIS_0]FF1
 setp   pid.x.FF2       [AXIS_0]FF2
 setp   pid.x.deadband  [AXIS_0]DEADBAND
 setp   pid.x.maxoutput [AXIS_0]MAX_OUTPUT
-#setp   pid.x.error-previous-target true
 
 #net x-index-enable  <=> pid.x.index-enable
 net x-enable        =>  pid.x.enable
@@ -582,10 +577,6 @@ net machine-is-on         halui.machine.is-on
 net jog-speed             halui.jog-speed 
 net MDI-mode              halui.mode.is-mdi
 
-#  ---charge pump signals---
-#net estop-out       =>  charge-pump.enable
-#net charge-pump     <=  charge-pump.out
-
 #  ---coolant signals---
 
 #net coolant-air      <=  iocontrol.0.coolant-air
@@ -625,6 +616,12 @@ setp    axis.3.jog-vel-mode 0
 net selected-jog-incr    =>  axis.3.jog-scale
 net joint-select-d       =>  axis.3.jog-enable
 net joint-selected-count =>  axis.3.jog-counts
+
+#       for axis c MPG
+setp    axis.4.jog-vel-mode 0
+net selected-jog-incr    =>  axis.4.jog-scale
+net joint-select-d       =>  axis.4.jog-enable
+net joint-selected-count =>  axis.4.jog-counts
 
 # connect selectable mpg jog increments 
 
@@ -729,5 +726,6 @@ net tool-prepare-confirmed  =>  iocontrol.0.tool-prepared
 
 # Load Classicladder without GUI (can reload LADDER GUI in AXIS GUI
 
-loadusr classicladder --nogui XYZAC320.clp
+#loadusr classicladder --nogui XYZAC320.clp
+loadusr classicladder XYZAC320.clp
 
