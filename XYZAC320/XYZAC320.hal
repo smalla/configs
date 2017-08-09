@@ -4,7 +4,7 @@ loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AX
 loadrt hostmot2
 loadrt hm2_pci config=" num_encoders=12 num_pwmgens=0 num_stepgens=0 sserial_port_0=000000" 
 setp    hm2_5i25.0.watchdog.timeout_ns 5000000
-loadrt at_pid names=pid.x,pid.y,pid.z,pid.a,pid.c,pid.s
+loadrt pid names=pid.x,pid.y,pid.z,pid.a,pid.c,pid.s
 loadrt scale names=scale.gear
 loadrt classicladder_rt numPhysInputs=128 numPhysOutputs=32 numS32in=10 numS32out=10 numFloatIn=10 numFloatOut=10 numBits=50 numWords=50
 loadrt mux16 names=jogincr,feedogray,mvoincr,soincr,ratio_select
@@ -107,9 +107,9 @@ setp feedogray.in15	0.000
 # --- X-Axis related pins ---
 net home-x  	<= hm2_5i25.0.7i77.0.0.input-01-not => classicladder.0.in-02
 net min-x     	<= hm2_5i25.0.7i77.0.0.input-03-not => classicladder.0.in-03
-net min-x-hard	<= hm2_5i25.0.7i77.0.0.input-00 => classicladder.0.in-04
+#net min-x-hard	<= hm2_5i25.0.7i77.0.0.input-00 => classicladder.0.in-04
 net max-x    	<= hm2_5i25.0.7i77.0.0.input-02-not => classicladder.0.in-05
-net max-x-hard	<= hm2_5i25.0.7i77.0.0.input-02 => classicladder.0.in-06
+#net max-x-hard	<= hm2_5i25.0.7i77.0.0.input-00 => classicladder.0.in-06
 net xvrdy   	<= hm2_5i25.0.7i77.0.0.input-31 => classicladder.0.in-07
 net xtrm 	    <= hm2_5i25.0.7i77.0.0.input-30 => classicladder.0.in-08
 net xal1    	<= hm2_5i25.0.7i77.0.0.input-29 => classicladder.0.in-09
@@ -130,8 +130,8 @@ net yal4  	    <= hm2_5i25.0.7i77.0.0.input-22 => classicladder.0.in-21
 net ybrake  	<= hm2_5i25.0.7i77.0.0.input-21 => classicladder.0.in-22
 
 # --- Z-Axis related pins ---
-net home-z    	<= hm2_5i25.0.7i77.0.3.input-21 => classicladder.0.in-23
-net min-z    	<= hm2_5i25.0.7i77.0.3.input-23 => classicladder.0.in-24
+net home-z    	<= hm2_5i25.0.7i77.0.0.input-08-not => classicladder.0.in-23
+net min-z    	<= hm2_5i25.0.7i77.0.0.input-06-not => classicladder.0.in-24
 net min-z-hard 	<= hm2_5i25.0.7i77.0.3.input-22 => classicladder.0.in-25
 net max-z     	<= hm2_5i25.0.7i77.0.3.input-25 => classicladder.0.in-26
 net max-z-hard	<= hm2_5i25.0.7i77.0.3.input-24 => classicladder.0.in-27
@@ -155,9 +155,9 @@ net abrake  	<= hm2_5i25.0.7i77.0.0.input-10 => classicladder.0.in-38
 # --- C-Axis related pins ---
 net home-c	    <= hm2_5i25.0.7i77.0.3.input-11
 net cvrdy 	    <= hm2_5i25.0.7i77.0.0.input-09 => classicladder.0.in-39
-net ctrm  	    <= hm2_5i25.0.7i77.0.0.input-08 => classicladder.0.in-40
+#net ctrm  	    <= hm2_5i25.0.7i77.0.0.input-08 => classicladder.0.in-40
 net cal1  	    <= hm2_5i25.0.7i77.0.0.input-07 => classicladder.0.in-41
-net cal2  	    <= hm2_5i25.0.7i77.0.0.input-06 => classicladder.0.in-42
+#net cal2  	    <= hm2_5i25.0.7i77.0.0.input-06 => classicladder.0.in-42
 net cal4  	    <= hm2_5i25.0.7i77.0.0.input-05 => classicladder.0.in-43
 net cbrake  	<= hm2_5i25.0.7i77.0.0.input-04 => classicladder.0.in-44
 
@@ -243,7 +243,7 @@ net x-pos-rawcounts        <=  hm2_5i25.0.encoder.00.rawcounts
 
 net home-x     =>  axis.0.home-sw-in
 net min-x     =>  axis.0.neg-lim-sw-in
-net x-pos-limit     =>  axis.0.pos-lim-sw-in
+net max-x     =>  axis.0.pos-lim-sw-in
 
 #*******************
 #  AXIS Y
@@ -349,7 +349,7 @@ setp    hm2_5i25.0.encoder.02.index-mask-invert 0
 setp    hm2_5i25.0.encoder.02.scale  [AXIS_2]ENCODER_SCALE
 
 net z-pos-fb               <=  hm2_5i25.0.encoder.02.position
-net z-vel-fb               <=  hm2_5i25.0.encoder.02.velocity => hm2_5i25.0.7i77.0.1.analogout5
+#net z-vel-fb               <=  hm2_5i25.0.encoder.02.velocity => hm2_5i25.0.7i77.0.1.analogout5
 net z-pos-fb               =>  axis.2.motor-pos-fb
 net z-index-enable    axis.2.index-enable  <=>  hm2_5i25.0.encoder.02.index-enable
 net z-pos-rawcounts        <=  hm2_5i25.0.encoder.02.rawcounts
