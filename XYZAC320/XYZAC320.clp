@@ -301,6 +301,7 @@ _FILE-symbols.csv
 %I62,Aux-Off,
 %I63,lube-is-o,⇒lube-on halui.lube.is-on
 %I64,m-is-on,
+%I65,ovrkey,
 %Q10,aux-r1,
 %Q11,aux-r2,
 %Q12,x-emg,
