@@ -11,7 +11,7 @@ loadrt pid names=pid.x,pid.z,pid.u,pid.w,pid.s
 loadrt abs names=abs.spindle
 loadrt lowpass names=lowpass.spindle
 loadrt mux16 names=jogincrement
-
+loadrt classicladder_rt numPhysInputs=32 numPhysOutputs=32 numS32in=10 numS32out=10 numFloatIn=10 numFloatOut=10 numBits=50 numWords=50
 
 addf hm2_7i76e.0.read          servo-thread
 addf motion-command-handler   servo-thread
@@ -21,6 +21,7 @@ addf pid.z.do-pid-calcs       servo-thread
 addf pid.u.do-pid-calcs       servo-thread
 addf pid.w.do-pid-calcs       servo-thread
 addf pid.s.do-pid-calcs       servo-thread
+addf classicladder.0.refresh  servo-thread
 addf abs.spindle              servo-thread
 addf lowpass.spindle          servo-thread
 addf hm2_7i76e.0.write         servo-thread
@@ -29,15 +30,14 @@ setp hm2_7i76e.0.dpll.01.timer-us -50
 setp hm2_7i76e.0.stepgen.timer-number 1
 
 # external output signals
-
+net mainspower hm2_7i76e.0.7i76.0.0.output-15 <= classicladder.0.out-01
 
 # external input signals
-
+net estop hm2_7i76e.0.7i76.0.0.input-00 => classicladder.0.in-00
 
 #*******************
 #  AXIS X
 #*******************
-
 setp   pid.x.Pgain     [AXIS_0]P
 setp   pid.x.Igain     [AXIS_0]I
 setp   pid.x.Dgain     [AXIS_0]D
@@ -310,7 +310,7 @@ net jog-selected-neg      halui.jog.selected.minus
 net spindle-manual-cw     halui.spindle.forward
 net spindle-manual-ccw    halui.spindle.reverse
 net spindle-manual-stop   halui.spindle.stop
-net machine-is-on         halui.machine.is-on
+net machine-is-on         halui.machine.is-on => classicladder.0.in-01
 net jog-speed             halui.jog-speed 
 net MDI-mode              halui.mode.is-mdi
 
@@ -372,3 +372,5 @@ net jog-xu-counts axis.0.jog-counts axis.6.jog-counts <= hm2_7i76e.0.7i76.0.0.en
 net jog-zw-counts axis.2.jog-counts axis.8.jog-counts <= hm2_7i76e.0.7i76.0.0.enc1.count
 net gray3 axis.0.jog-enable axis.2.jog-enable 
 net uwjog axis.6.jog-enable axis.8.jog-enable hm2_7i76e.0.7i76.0.0.input-12-not
+
+loadusr classicladder mav-xzuw.clp
