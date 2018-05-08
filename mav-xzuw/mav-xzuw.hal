@@ -180,9 +180,9 @@ net u-enable     => hm2_7i76e.0.stepgen.02.enable
 setp    hm2_7i76e.0.gpio.004.invert_output true
 # ---setup home / limit switch signals---
 
-net u-home-sw     =>  axis.6.home-sw-in
+net max-home-u     =>  axis.6.home-sw-in
 net u-neg-limit     =>  axis.6.neg-lim-sw-in
-net u-pos-limit     =>  axis.6.pos-lim-sw-in
+net max-home-u     <=  hm2_7i76e.0.7i76.0.0.input-14
 
 #*******************
 #  AXIS W
@@ -231,9 +231,9 @@ net w-enable     => hm2_7i76e.0.stepgen.03.enable
 setp    hm2_7i76e.0.gpio.006.invert_output false
 # ---setup home / limit switch signals---
 
-net w-home-sw     =>  axis.8.home-sw-in
-net w-neg-limit     =>  axis.8.neg-lim-sw-in
 net w-pos-limit     =>  axis.8.pos-lim-sw-in
+net max-home-w     <=  hm2_7i76e.0.7i76.0.0.input-15
+net max-home-w   =>  axis.8.home-sw-in
 
 #*******************
 #  SPINDLE S
