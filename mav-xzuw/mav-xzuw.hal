@@ -256,6 +256,13 @@ net spindle-vel-cmd-rpm     => pid.s.command
 net spindle-vel-fb-rpm      => pid.s.feedback
 net spindle-output        <=  pid.s.output
 
+setp   hm2_7i76e.0.7i76.0.0.spinout-minlim    [SPINDLE_9]OUTPUT_MIN_LIMIT
+setp   hm2_7i76e.0.7i76.0.0.spinout-maxlim    [SPINDLE_9]OUTPUT_MAX_LIMIT
+setp   hm2_7i76e.0.7i76.0.0.spinout-scalemax  [SPINDLE_9]OUTPUT_SCALE
+net spindle-output      => hm2_7i76e.0.7i76.0.0.spinout
+net spindle-enable      => hm2_7i76e.0.7i76.0.0.spinena
+net spindle-cw         => hm2_7i76e.0.7i76.0.0.spindir
+
 # ---setup spindle control signals---
 
 net spindle-vel-cmd-rps        <=  motion.spindle-speed-out-rps
@@ -272,6 +279,8 @@ net spindle-vel-fb-rps         =>  motion.spindle-speed-in
 net spindle-index-enable      <=>  motion.spindle-index-enable
 
 # ---Setup spindle at speed signals---
+
+
 
 sets spindle-at-speed true
 
