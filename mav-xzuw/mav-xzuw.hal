@@ -250,7 +250,7 @@ setp   pid.s.deadband  [SPINDLE_9]DEADBAND
 setp   pid.s.maxoutput [SPINDLE_9]MAX_OUTPUT
 setp   pid.s.error-previous-target true
 
-net spindle-index-enable  <=> pid.s.index-enable
+#net spindle-index-enable  <=> pid.s.index-enable
 net spindle-enable        =>  pid.s.enable
 net spindle-vel-cmd-rpm     => pid.s.command
 net spindle-vel-fb-rpm      => pid.s.feedback
@@ -279,8 +279,6 @@ net spindle-vel-fb-rps         =>  motion.spindle-speed-in
 net spindle-index-enable      <=>  motion.spindle-index-enable
 
 # ---Setup spindle at speed signals---
-
-
 
 sets spindle-at-speed true
 
@@ -341,13 +339,12 @@ net machine-is-enabled        <=  motion.motion-enabled
 #net estop-out     <=  iocontrol.0.user-enable-out 
 net estop-out     =>  iocontrol.0.emc-enable-in classicladder.0.out-00
 
-#  ---toolchange signals for custom tool changer---
-
-net tool-number             <=  iocontrol.0.tool-prep-number
-net tool-change-request     <=  iocontrol.0.tool-change
-net tool-change-confirmed   =>  iocontrol.0.tool-changed
-net tool-prepare-request    <=  iocontrol.0.tool-prepare
-net tool-prepare-confirmed  =>  iocontrol.0.tool-prepared
+#  ---toolchange signals for manual tool changer---
+loadusr -W hal_manualtoolchange
+net tool-change-request     iocontrol.0.tool-change       =>  hal_manualtoolchange.change
+net tool-change-confirmed   iocontrol.0.tool-changed      <=  hal_manualtoolchange.changed
+net tool-number             iocontrol.0.tool-prep-number  =>  hal_manualtoolchange.number
+net tool-prepare-loopback   iocontrol.0.tool-prepare      =>  iocontrol.0.tool-prepared
 
 #Increment selector switch
 setp jogincrementXZ.use-graycode true
