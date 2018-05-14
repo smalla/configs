@@ -1,0 +1,3 @@
+#!/bin/sh
+axis-remote --reload &
+exit 0
