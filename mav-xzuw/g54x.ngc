@@ -1,5 +1,6 @@
 o<g54x> sub
-G10 L20 P1 X0 
-(debug, X átmérő érintve)
+#<_Nevleges_meret> = 760
+G10 L20 P1 X[#<_Nevleges_meret>/2]
+(debug, X átmérő érintve Névleges Méret #<_Nevleges_meret>)
 M100
 o<g54x> endsub

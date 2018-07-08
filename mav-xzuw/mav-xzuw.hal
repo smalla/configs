@@ -24,6 +24,10 @@ addf lowpass.spindle          servo-thread
 addf hm2_7i76e.0.write        servo-thread
 addf jogincrementXZ           servo-thread
 addf jogincrementUW           servo-thread
+addf and2.0                   servo-thread
+addf and2.1                   servo-thread
+addf and2.2                   servo-thread
+addf and2.3                   servo-thread
 setp hm2_7i76e.0.dpll.01.timer-us -50
 setp hm2_7i76e.0.stepgen.timer-number 1
 
@@ -396,21 +400,15 @@ net selected-jog-incrXZ jogincrementXZ.out-f axis.0.jog-scale axis.2.jog-scale
 net selected-jog-incrUW jogincrementUW.out-f axis.6.jog-scale axis.8.jog-scale
 net jog-xz-counts axis.0.jog-counts axis.2.jog-counts <= hm2_7i76e.0.7i76.0.0.enc0.count
 net jog-uw-counts axis.6.jog-counts axis.8.jog-counts <= hm2_7i76e.0.7i76.0.0.enc1.count
-net grayXZ2 axis.2.jog-enable and2.0.in0 and2.1.in0
-net Zjog axis.0.jog-enable <= hm2_7i76e.0.7i76.0.0.input-05-not
-net grayUW2 axis.8.jog-enable and2.2.in0 and2.3.in0
-net Wjog axis.6.jog-enable hm2_7i76e.0.7i76.0.0.input-13-not
+net grayXZ2 axis.2.jog-enable and2.1.in0 
+net Zjog axis.0.jog-enable <= hm2_7i76e.0.7i76.0.0.input-05-not => and2.0.in0
+net grayUW2 axis.8.jog-enable and2.3.in0
+net Wjog axis.6.jog-enable hm2_7i76e.0.7i76.0.0.input-13-not => and2.2.in0
 
 loadusr classicladder mav-xzuw.clp
 # custom buttons
-#net and2.xg54set0.in0 grayXZ2
-net zerox and2.0.in1 hm2_7i76e.0.7i76.0.0.input-00
-#net and2.zg54set0.in0 grayXZ2
-net zeroz and2.1.in1 hm2_7i76e.0.7i76.0.0.input-00-not
-#net and2.ug54set0.in0 greyUW2
-net zerou and2.2.in1 hm2_7i76e.0.7i76.0.0.input-08
-#net and2.wg54set0.in0 greyUW2
-net zerow and2.3.in1 hm2_7i76e.0.7i76.0.0.input-08-not
+net zeroxz and2.0.in1 and2.1.in1 hm2_7i76e.0.7i76.0.0.input-00
+net zerouw and2.2.in1 and2.3.in1 hm2_7i76e.0.7i76.0.0.input-08
 
 net zerog54x and2.0.out halui.mdi-command-00
 net zerog54z and2.1.out halui.mdi-command-01
