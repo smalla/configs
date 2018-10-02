@@ -1,0 +1,8 @@
+o<g54xdecrease> sub
+
+(debug, G54 X indulaskor: #5221)
+G10 L2 P1 X[#5221-0.5]
+
+(debug, G54 X most: #5221)
+M100
+o<g54xdecrease> endsub

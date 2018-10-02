@@ -5,9 +5,10 @@ loadrt hm2_eth board_ip="192.168.1.121" config="firmware=hm2/7i76/7i76e.BIT num_
 setp   hm2_7i76e.0.watchdog.timeout_ns 5000000
 loadrt pid names=pid.x,pid.z,pid.u,pid.w,pid.s
 loadrt abs names=abs.spindle
-loadrt and2 count=4
+loadrt and2 count=6
 loadrt lowpass names=lowpass.spindle
 loadrt mux16 names=jogincrementXZ,jogincrementUW
+loadrt lut5 names=lutX,lutZ,lutG54XZ,lutU,lutW,lutG54UW
 loadrt classicladder_rt numPhysInputs=32 numPhysOutputs=32 numS32in=10 numS32out=10 numFloatIn=10 numFloatOut=10 numBits=50 numWords=50
 
 addf hm2_7i76e.0.read          servo-thread
@@ -28,6 +29,14 @@ addf and2.0                   servo-thread
 addf and2.1                   servo-thread
 addf and2.2                   servo-thread
 addf and2.3                   servo-thread
+addf and2.4                   servo-thread
+addf and2.5                   servo-thread
+addf lutX                     servo-thread
+addf lutZ                     servo-thread
+addf lutG54XZ                 servo-thread
+addf lutU                     servo-thread
+addf lutW                     servo-thread
+addf lutG54UW                 servo-thread
 setp hm2_7i76e.0.dpll.01.timer-us -50
 setp hm2_7i76e.0.stepgen.timer-number 1
 
@@ -354,13 +363,37 @@ net tool-prepare-loopback   iocontrol.0.tool-prepare      =>  iocontrol.0.tool-p
 #Increment selector switch
 setp jogincrementXZ.use-graycode true
 setp jogincrementUW.use-graycode true
-net grayXZ0 jogincrementXZ.sel0 <= hm2_7i76e.0.7i76.0.0.input-03
-net grayXZ1 jogincrementXZ.sel1 <= hm2_7i76e.0.7i76.0.0.input-04
-net grayXZ2 jogincrementXZ.sel3 <= hm2_7i76e.0.7i76.0.0.input-05
+net grayXZ0 jogincrementXZ.sel0 <= hm2_7i76e.0.7i76.0.0.input-03 lutX.in-0 lutZ.in-0 lutG54XZ.in-0
+net grayXZ1 jogincrementXZ.sel1 <= hm2_7i76e.0.7i76.0.0.input-04 lutX.in-1 lutZ.in-1 lutG54XZ.in-1
+net grayXZ2 jogincrementXZ.sel3 <= hm2_7i76e.0.7i76.0.0.input-05 lutX.in-2 lutZ.in-2 lutG54XZ.in-2
+setp lutX.in-3 0
+setp lutX.in-4 0
+setp lutZ.in-3 0
+setp lutZ.in-4 0
+
+setp lutX.function 0xa 
+net lutXjog lutX.out axis.0.jog-enable and2.0.in0 
+setp lutZ.function 0x30
+net lutZjog lutZ.out axis.2.jog-enable and2.1.in0
+
+setp lutG54XZ.function 0x1
+
+setp lutU.function 0xa 
+net lutUjog lutU.out axis.6.jog-enable and2.2.in0 
+setp lutW.function 0x30
+net lutWjog lutW.out axis.8.jog-enable and2.3.in0
+
+setp lutG54UW.function 0x1
+
+setp axis.0.jog-vel-mode 1
+setp axis.2.jog-vel-mode 1
+setp axis.6.jog-vel-mode 1
+setp axis.8.jog-vel-mode 1
+
 #net gray3 jogincrement.sel3 <= hm2_7i76e.0.7i76.0.0.input-12
-net grayUW0 jogincrementUW.sel0 <= hm2_7i76e.0.7i76.0.0.input-11
-net grayUW1 jogincrementUW.sel1 <= hm2_7i76e.0.7i76.0.0.input-12
-net grayUW2 jogincrementUW.sel3 <= hm2_7i76e.0.7i76.0.0.input-13
+net grayUW0 jogincrementUW.sel0 <= hm2_7i76e.0.7i76.0.0.input-11 lutU.in-0 lutW.in-0 lutG54UW.in-0
+net grayUW1 jogincrementUW.sel1 <= hm2_7i76e.0.7i76.0.0.input-12 lutU.in-1 lutW.in-1 lutG54UW.in-1
+net grayUW2 jogincrementUW.sel3 <= hm2_7i76e.0.7i76.0.0.input-13 lutU.in-2 lutW.in-2 lutG54UW.in-2
 setp jogincrementXZ.in00	0.0000
 setp jogincrementXZ.in01	0.0100
 setp jogincrementXZ.in02	0.1000
@@ -400,17 +433,20 @@ net selected-jog-incrXZ jogincrementXZ.out-f axis.0.jog-scale axis.2.jog-scale
 net selected-jog-incrUW jogincrementUW.out-f axis.6.jog-scale axis.8.jog-scale
 net jog-xz-counts axis.0.jog-counts axis.2.jog-counts <= hm2_7i76e.0.7i76.0.0.enc0.count
 net jog-uw-counts axis.6.jog-counts axis.8.jog-counts <= hm2_7i76e.0.7i76.0.0.enc1.count
-net grayXZ2 axis.2.jog-enable and2.1.in0 
-net Zjog axis.0.jog-enable <= hm2_7i76e.0.7i76.0.0.input-05-not => and2.0.in0
-net grayUW2 axis.8.jog-enable and2.3.in0
-net Wjog axis.6.jog-enable hm2_7i76e.0.7i76.0.0.input-13-not => and2.2.in0
+#net grayUW2 axis.8.jog-enable and2.3.in0
+#net Wjog axis.6.jog-enable hm2_7i76e.0.7i76.0.0.input-13-not => and2.2.in0
 
 loadusr classicladder mav-xzuw.clp
 # custom buttons
-net zeroxz and2.0.in1 and2.1.in1 hm2_7i76e.0.7i76.0.0.input-00
-net zerouw and2.2.in1 and2.3.in1 hm2_7i76e.0.7i76.0.0.input-08
+net zeroxz and2.0.in1 and2.1.in1 and2.4.in1 hm2_7i76e.0.7i76.0.0.input-00
+net zerouw and2.2.in1 and2.3.in1 and2.5.in1 hm2_7i76e.0.7i76.0.0.input-08
+
+net DecreaseX lutG54XZ.out and2.4.in0
+net DecreaseU lutG54UW.out and2.5.in0
 
 net zerog54x and2.0.out halui.mdi-command-00
 net zerog54z and2.1.out halui.mdi-command-01
 net zerog54u and2.2.out halui.mdi-command-02
 net zerog54w and2.3.out halui.mdi-command-03
+net g54decreaseX and2.4.out halui.mdi-command-04
+net g54decreaseU and2.5.out halui.mdi-command-05
