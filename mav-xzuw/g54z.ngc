@@ -1,5 +1,5 @@
 o<g54z> sub
-G10 L20 P1 Z0 
+G10 L20 P1 Z5
 (debug, Z tengely nullázva)
 M100
 o<g54z> endsub
