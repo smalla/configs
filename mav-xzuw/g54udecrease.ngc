@@ -1,7 +1,7 @@
 o<g54Udecrease> sub
 
 (debug, G54 U indulaskor: #5227)
-G10 L2 P1 U[#5227-0.5]
+G10 L2 P1 U[#5227-0.15]
 
 (debug, G54 U most: #5227)
 M100

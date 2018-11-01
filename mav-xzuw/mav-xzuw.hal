@@ -3,7 +3,8 @@ loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AX
 loadrt hostmot2
 loadrt hm2_eth board_ip="192.168.1.121" config="firmware=hm2/7i76/7i76e.BIT num_encoders=1 num_pwmgens=0 num_stepgens=4 sserial_port_0=2xxx" 
 setp   hm2_7i76e.0.watchdog.timeout_ns 5000000
-loadrt pid names=pid.x,pid.z,pid.u,pid.w,pid.s
+loadrt pid names=pid.x,pid.z,pid.u,pid.w
+#loadrt pid names=pid.x,pid.z,pid.u,pid.w,pid.s
 loadrt abs names=abs.spindle
 loadrt and2 count=6
 loadrt lowpass names=lowpass.spindle
@@ -18,7 +19,7 @@ addf pid.x.do-pid-calcs       servo-thread
 addf pid.z.do-pid-calcs       servo-thread
 addf pid.u.do-pid-calcs       servo-thread
 addf pid.w.do-pid-calcs       servo-thread
-addf pid.s.do-pid-calcs       servo-thread
+#addf pid.s.do-pid-calcs       servo-thread
 addf classicladder.0.refresh  servo-thread
 addf abs.spindle              servo-thread
 addf lowpass.spindle          servo-thread
@@ -253,44 +254,48 @@ net max-home-w   =>  axis.8.home-sw-in
 #  SPINDLE S
 #*******************
 
-setp   pid.s.Pgain     [SPINDLE_9]P
-setp   pid.s.Igain     [SPINDLE_9]I
-setp   pid.s.Dgain     [SPINDLE_9]D
-setp   pid.s.bias      [SPINDLE_9]BIAS
-setp   pid.s.FF0       [SPINDLE_9]FF0
-setp   pid.s.FF1       [SPINDLE_9]FF1
-setp   pid.s.FF2       [SPINDLE_9]FF2
-setp   pid.s.deadband  [SPINDLE_9]DEADBAND
-setp   pid.s.maxoutput [SPINDLE_9]MAX_OUTPUT
-setp   pid.s.error-previous-target true
+#setp   pid.s.Pgain     [SPINDLE_9]P
+#setp   pid.s.Igain     [SPINDLE_9]I
+#setp   pid.s.Dgain     [SPINDLE_9]D
+#setp   pid.s.bias      [SPINDLE_9]BIAS
+#setp   pid.s.FF0       [SPINDLE_9]FF0
+#setp   pid.s.FF1       [SPINDLE_9]FF1
+#setp   pid.s.FF2       [SPINDLE_9]FF2
+#setp   pid.s.deadband  [SPINDLE_9]DEADBAND
+#setp   pid.s.maxoutput [SPINDLE_9]MAX_OUTPUT
+#setp   pid.s.error-previous-target true
 
 #net spindle-index-enable  <=> pid.s.index-enable
-net spindle-enable        =>  pid.s.enable
-net spindle-vel-cmd-rpm     => pid.s.command
-net spindle-vel-fb-rpm      => pid.s.feedback
-net spindle-output        <=  pid.s.output
+#net spindle-enable        =>  pid.s.enable
+#net spindle-vel-cmd-rpm     => pid.s.command
+#net spindle-vel-fb-rpm      => pid.s.feedback
+#net spindle-output        <=  pid.s.output
 
 setp   hm2_7i76e.0.7i76.0.0.spinout-minlim    [SPINDLE_9]OUTPUT_MIN_LIMIT
 setp   hm2_7i76e.0.7i76.0.0.spinout-maxlim    [SPINDLE_9]OUTPUT_MAX_LIMIT
 setp   hm2_7i76e.0.7i76.0.0.spinout-scalemax  [SPINDLE_9]OUTPUT_SCALE
-net spindle-output      => hm2_7i76e.0.7i76.0.0.spinout
+#net spindle-output      => hm2_7i76e.0.7i76.0.0.spinout
 net spindle-enable      => hm2_7i76e.0.7i76.0.0.spinena
-net spindle-cw         => hm2_7i76e.0.7i76.0.0.spindir
+net spindle-ccw         => hm2_7i76e.0.7i76.0.0.spindir
+
+loadrt scale count=1
+addf scale.0 servo-thread
+setp scale.0.gain -0.0625
+net spindle-speed-scale motion.spindle-speed-out => scale.0.in
+net spindle-speed-DAC scale.0.out hm2_7i76e.0.7i76.0.0.spinout
 
 # ---setup spindle control signals---
 
-net spindle-vel-cmd-rps        <=  motion.spindle-speed-out-rps
-net spindle-vel-cmd-rps-abs    <=  motion.spindle-speed-out-rps-abs
-net spindle-vel-cmd-rpm        <=  motion.spindle-speed-out
-net spindle-vel-cmd-rpm-abs    <=  motion.spindle-speed-out-abs
+#net spindle-vel-cmd-rps        <=  motion.spindle-speed-out-rps
+#net spindle-vel-cmd-rps-abs    <=  motion.spindle-speed-out-rps-abs
+#net spindle-vel-cmd-rpm        <=  motion.spindle-speed-out
+#net spindle-vel-cmd-rpm-abs    <=  motion.spindle-speed-out-abs
 net spindle-enable             <=  motion.spindle-on
-net spindle-cw                 <=  motion.spindle-forward
-#net spindle-ccw                <=  motion.spindle-reverse
-#net spindle-brake              <=  motion.spindle-brake
+net spindle-ccw                 <=  motion.spindle-reverse
 net spindle-revs               =>  motion.spindle-revs
 net spindle-at-speed           =>  motion.spindle-at-speed
-net spindle-vel-fb-rps         =>  motion.spindle-speed-in
-net spindle-index-enable      <=>  motion.spindle-index-enable
+#net spindle-vel-fb-rps         =>  motion.spindle-speed-in
+#net spindle-index-enable      <=>  motion.spindle-index-enable
 
 # ---Setup spindle at speed signals---
 
@@ -325,7 +330,6 @@ net jog-w-neg             halui.jog.8.minus
 net jog-w-analog          halui.jog.8.analog
 net jog-selected-pos      halui.jog.selected.plus
 net jog-selected-neg      halui.jog.selected.minus
-net spindle-manual-cw     halui.spindle.forward
 net spindle-manual-ccw    halui.spindle.reverse
 net spindle-manual-stop   halui.spindle.stop
 net machine-is-on         halui.machine.is-on => classicladder.0.in-01
