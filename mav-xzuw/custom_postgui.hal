@@ -1,2 +1,5 @@
 # Include your custom_postgui HAL commands here
 # This file will not be overwritten when you run PNCconf again
+net feed-override halui.feed-override.counts wsum.0.sum
+setp halui.feed-override.direct-value true
+net nomotiondetect motion.current-vel comp.0.in1

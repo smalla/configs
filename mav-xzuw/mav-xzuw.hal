@@ -4,34 +4,51 @@ loadrt hostmot2
 loadrt hm2_eth board_ip="192.168.1.121" config="firmware=hm2/7i76/7i76e.BIT num_encoders=1 num_pwmgens=0 num_stepgens=4 sserial_port_0=2xxx" 
 setp   hm2_7i76e.0.watchdog.timeout_ns 5000000
 loadrt pid names=pid.x,pid.z,pid.u,pid.w
-#loadrt pid names=pid.x,pid.z,pid.u,pid.w,pid.s
+loadrt weighted_sum wsum_sizes=6
+loadrt scale names=scale.spindle
 loadrt abs names=abs.spindle
-loadrt and2 count=6
+loadrt and2 count=11
+loadrt or2 count=1
+loadrt not count=2
+loadrt comp count=1
+loadrt toggle count=1
+loadrt toggle2nist count=1
 loadrt lowpass names=lowpass.spindle
 loadrt mux16 names=jogincrementXZ,jogincrementUW
 loadrt lut5 names=lutX,lutZ,lutG54XZ,lutU,lutW,lutG54UW
 loadrt classicladder_rt numPhysInputs=32 numPhysOutputs=32 numS32in=10 numS32out=10 numFloatIn=10 numFloatOut=10 numBits=50 numWords=50
 
-addf hm2_7i76e.0.read          servo-thread
+addf scale.spindle            servo-thread
+addf hm2_7i76e.0.read         servo-thread
 addf motion-command-handler   servo-thread
 addf motion-controller        servo-thread
 addf pid.x.do-pid-calcs       servo-thread
 addf pid.z.do-pid-calcs       servo-thread
 addf pid.u.do-pid-calcs       servo-thread
 addf pid.w.do-pid-calcs       servo-thread
-#addf pid.s.do-pid-calcs       servo-thread
 addf classicladder.0.refresh  servo-thread
 addf abs.spindle              servo-thread
 addf lowpass.spindle          servo-thread
 addf hm2_7i76e.0.write        servo-thread
 addf jogincrementXZ           servo-thread
 addf jogincrementUW           servo-thread
+addf not.0                    servo-thread
+addf not.1                    servo-thread
 addf and2.0                   servo-thread
 addf and2.1                   servo-thread
 addf and2.2                   servo-thread
 addf and2.3                   servo-thread
 addf and2.4                   servo-thread
 addf and2.5                   servo-thread
+addf and2.6                   servo-thread
+addf and2.7                   servo-thread
+addf and2.8                   servo-thread
+addf and2.9                   servo-thread
+addf and2.10                  servo-thread
+addf or2.0                    servo-thread
+addf toggle.0                 servo-thread
+addf toggle2nist.0            servo-thread
+addf comp.0                   servo-thread
 addf lutX                     servo-thread
 addf lutZ                     servo-thread
 addf lutG54XZ                 servo-thread
@@ -40,6 +57,7 @@ addf lutW                     servo-thread
 addf lutG54UW                 servo-thread
 setp hm2_7i76e.0.dpll.01.timer-us -50
 setp hm2_7i76e.0.stepgen.timer-number 1
+addf process_wsums servo-thread
 
 # external output signals
 net mainspower hm2_7i76e.0.7i76.0.0.output-15 <= classicladder.0.out-01
@@ -254,44 +272,30 @@ net max-home-w   =>  axis.8.home-sw-in
 #  SPINDLE S
 #*******************
 
-#setp   pid.s.Pgain     [SPINDLE_9]P
-#setp   pid.s.Igain     [SPINDLE_9]I
-#setp   pid.s.Dgain     [SPINDLE_9]D
-#setp   pid.s.bias      [SPINDLE_9]BIAS
-#setp   pid.s.FF0       [SPINDLE_9]FF0
-#setp   pid.s.FF1       [SPINDLE_9]FF1
-#setp   pid.s.FF2       [SPINDLE_9]FF2
-#setp   pid.s.deadband  [SPINDLE_9]DEADBAND
-#setp   pid.s.maxoutput [SPINDLE_9]MAX_OUTPUT
-#setp   pid.s.error-previous-target true
-
-#net spindle-index-enable  <=> pid.s.index-enable
-#net spindle-enable        =>  pid.s.enable
-#net spindle-vel-cmd-rpm     => pid.s.command
-#net spindle-vel-fb-rpm      => pid.s.feedback
-#net spindle-output        <=  pid.s.output
-
 setp   hm2_7i76e.0.7i76.0.0.spinout-minlim    [SPINDLE_9]OUTPUT_MIN_LIMIT
 setp   hm2_7i76e.0.7i76.0.0.spinout-maxlim    [SPINDLE_9]OUTPUT_MAX_LIMIT
 setp   hm2_7i76e.0.7i76.0.0.spinout-scalemax  [SPINDLE_9]OUTPUT_SCALE
-#net spindle-output      => hm2_7i76e.0.7i76.0.0.spinout
 net spindle-enable      => hm2_7i76e.0.7i76.0.0.spinena
 net spindle-ccw         => hm2_7i76e.0.7i76.0.0.spindir
 
-loadrt scale count=1
-addf scale.0 servo-thread
-setp scale.0.gain -0.0625
-net spindle-speed-scale motion.spindle-speed-out => scale.0.in
-net spindle-speed-DAC scale.0.out hm2_7i76e.0.7i76.0.0.spinout
+#setp scale.spindle.gain 10
+#net spindle-speed-scale motion.spindle-speed-out-abs  => scale.spindle.in
+#net absolute scale.spindle.out abs.spindle.in
+#net spindle-speed-DAC abs.spindle.out hm2_7i76e.0.7i76.0.0.spinout
 
-# ---setup spindle control signals---
+#net absolute motion.spindle-speed-out abs.spindle.in
+#net spindle-speed-DAC scale.spindle.out hm2_7i76e.0.7i76.0.0.spinout
+net spindle-speed-DAC motion.spindle-speed-out-abs hm2_7i76e.0.7i76.0.0.spinout
+# spindlerate is in /usr/bin/axis line 3460
+
+# ---setup spindle control signals---	
 
 #net spindle-vel-cmd-rps        <=  motion.spindle-speed-out-rps
 #net spindle-vel-cmd-rps-abs    <=  motion.spindle-speed-out-rps-abs
 #net spindle-vel-cmd-rpm        <=  motion.spindle-speed-out
 #net spindle-vel-cmd-rpm-abs    <=  motion.spindle-speed-out-abs
 net spindle-enable             <=  motion.spindle-on
-net spindle-ccw                 <=  motion.spindle-reverse
+net spindle-ccw                 <=  motion.spindle-forward
 net spindle-revs               =>  motion.spindle-revs
 net spindle-at-speed           =>  motion.spindle-at-speed
 #net spindle-vel-fb-rps         =>  motion.spindle-speed-in
@@ -454,3 +458,55 @@ net zerog54u and2.2.out halui.mdi-command-02
 net zerog54w and2.3.out halui.mdi-command-03
 net g54decreaseX and2.4.out halui.mdi-command-04
 net g54decreaseU and2.5.out halui.mdi-command-05
+
+#feed override
+
+
+setp halui.feed-override.count-enable true
+
+net wsum0 wsum.0.bit.0.in  hm2_7i76e.0.7i76.0.0.input-20
+net wsum1 wsum.0.bit.1.in  hm2_7i76e.0.7i76.0.0.input-21
+net wsum2 wsum.0.bit.2.in  hm2_7i76e.0.7i76.0.0.input-22
+net wsum3 wsum.0.bit.3.in  hm2_7i76e.0.7i76.0.0.input-23
+net wsum4 wsum.0.bit.4.in  hm2_7i76e.0.7i76.0.0.input-24
+net wsum5 wsum.0.bit.5.in  hm2_7i76e.0.7i76.0.0.input-25
+
+setp wsum.0.bit.0.weight 0
+setp wsum.0.bit.1.weight 1
+setp wsum.0.bit.2.weight 2
+setp wsum.0.bit.3.weight 5
+setp wsum.0.bit.4.weight 10
+setp wsum.0.bit.5.weight 20
+
+
+net isrunning0 and2.6.in0 halui.program.is-running and2.8.in1
+net isrunning1 and2.6.in1 halui.mode.is-auto
+net programisrunning and2.6.out not.0.in
+net greenled not.0.out hm2_7i76e.0.7i76.0.0.output-09
+net motiondetectconverter comp.0.equal not.1.in
+net redled not.1.out hm2_7i76e.0.7i76.0.0.output-08
+#net redled comp.0.out hm2_7i76e.0.7i76.0.0.output-08
+setp comp.0.in0 0
+setp comp.0.hyst 0.0005
+
+net pause-resume-btn and2.7.in0 and2.8.in0 <= hm2_7i76e.0.7i76.0.0.input-30
+net pause-on toggle2nist.0.is-on and2.7.in1 and2.10.in1 <= halui.program.is-paused
+#net run-on and2.8.in1 <= halui.program.is-running
+net pause-sig or2.0.in0 <= and2.7.out
+net resume-sig or2.0.in1 <= and2.8.out
+net toggle-ok toggle.0.in <= or2.0.out
+net togglesig toggle2nist.0.in <= toggle.0.out
+net toggleon halui.program.pause <= toggle2nist.0.on
+net toggleoff halui.program.resume <= toggle2nist.0.off
+# Run/Step Section
+net run-step-btn and2.9.in0 and2.10.in0 <=  hm2_7i76e.0.7i76.0.0.input-31
+net idle-on and2.9.in1 <= halui.program.is-idle
+# net pause.on and 2.10.in1 <= halui.program.is-paused
+# and2.10.in1 was added in the net pause-on statement in Pause/Resume Section
+net run-sig halui.mode.auto halui.program.run <= and2.9.out
+net step-sig halui.program.step <= and2.10.out
+
+
+
+#31-es bemenet a start 09-es a zöld led, 8-as a piros
+#30-as a feed0
