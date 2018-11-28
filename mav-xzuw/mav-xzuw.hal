@@ -64,7 +64,9 @@ net mainspower hm2_7i76e.0.7i76.0.0.output-15 <= classicladder.0.out-01
 
 # external input signals
 net estop hm2_7i76e.0.7i76.0.0.input-09-not => classicladder.0.in-00 
+net estop2 hm2_7i76e.0.7i76.0.0.input-10-not => classicladder.0.in-02
 
+net homeall halui.home-all hm2_7i76e.0.7i76.0.0.input-29
 #*******************
 #  AXIS X
 #*******************
@@ -481,11 +483,12 @@ setp wsum.0.bit.5.weight 20
 
 net isrunning0 and2.6.in0 halui.program.is-running and2.8.in1
 net isrunning1 and2.6.in1 halui.mode.is-auto
-net programisrunning and2.6.out not.0.in
-net greenled not.0.out hm2_7i76e.0.7i76.0.0.output-09
-net motiondetectconverter comp.0.equal not.1.in
-net redled not.1.out hm2_7i76e.0.7i76.0.0.output-08
-#net redled comp.0.out hm2_7i76e.0.7i76.0.0.output-08
+#net programisrunning and2.6.out not.0.in
+#net greenled not.0.out hm2_7i76e.0.7i76.0.0.output-09
+net greenled and2.6.out hm2_7i76e.0.7i76.0.0.output-09
+#net motiondetectconverter comp.0.equal not.1.in
+#net redled not.1.out hm2_7i76e.0.7i76.0.0.output-08
+net redled comp.0.equal hm2_7i76e.0.7i76.0.0.output-08
 setp comp.0.in0 0
 setp comp.0.hyst 0.0005
 
